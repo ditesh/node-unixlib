@@ -20,7 +20,7 @@
 using namespace node;
 using namespace v8;
 
-class UNIX:ObjectWrap {
+class UnixLib:ObjectWrap {
 
 public:
 
@@ -28,7 +28,6 @@ public:
 	 static void Init(Handle<Object> target) {
 
 		HandleScope scope;
-
 		Local<FunctionTemplate> t = FunctionTemplate::New(New);
 
 		s_ct = Persistent<FunctionTemplate>::New(t);

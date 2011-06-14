@@ -1,14 +1,14 @@
 {
-	"name" : "pam",
+	"name" : "unix",
 	"version" : "v0.1.0",
-	"description" : "Native Node.js C++ extension for authenticating off PAM.",
-	"homepage" : "https://github.com/ditesh/node-pam",
+	"description" : "Native Unix utilities for Node.js",
+	"homepage" : "https://github.com/ditesh/node-unix",
 	"author" : { 
 		"name" : "Ditesh Shashikant Gathani",
 		"email" : "ditesh@gathani.org",
 		"url" : "http://ditesh.gathani.org/blog/"
 	},
-	"repository" : { "type" : "git", "url" : "https://github.com/ditesh/node-pam.git" },
+	"repository" : { "type" : "git", "url" : "https://github.com/ditesh/node-unix.git" },
 	"scripts" : {
 		"preinstall" : "node-waf configure && node-waf build",
 		"preuninstall" : "rm -rf build/*"
