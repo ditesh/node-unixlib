@@ -136,12 +136,10 @@ static int Flock(eio_req *req) {
 	if (flock(baton->fd, LOCK_EX | LOCK_NB) == -1) {
 
 		baton->result = false;
-		printf("cannot get lock");
 
 	} else {
 
 		baton->result = true;
-		printf("got lock");
 
 	}
 
