@@ -16,6 +16,9 @@
 using namespace node;
 using namespace v8;
 
+static Handle<Value> MkstempAsync(const Arguments&);
+static int Mkstemp(eio_req *);
+static int AfterMkstemp(eio_req *);
 static Handle<Value> FlockAsync(const Arguments&);
 static int Flock(eio_req *);
 static int AfterFlock(eio_req *);
@@ -62,6 +65,13 @@ extern "C" {
         }
 }
 
+struct mkstemp_baton {
+	char *strtemplate;
+	int fd;
+	bool result;
+	Persistent<Function> cb;
+};
+
 struct flock_baton {
 	int fd;
 	bool result;
@@ -75,6 +85,32 @@ struct pam_baton {
 	const char *password;
 	Persistent<Function> cb;
 };
+
+static Handle<Value> MkstempAsync(const Arguments& args) {
+
+	HandleScope scope;
+	const char *usage = "usage: mkstemp(template, callback)";
+
+	if (args.Length() != 2)
+		return ThrowException(Exception::Error(String::New(usage)));
+
+	if (!args[0]->IsString())
+		return ThrowException(Exception::TypeError(String::New("First argument must be a string")));
+
+	REQ_FUN_ARG(1, cb);
+
+	mkstemp_baton *baton = (mkstemp_baton *) malloc(sizeof(struct mkstemp_baton));
+
+	String::Utf8Value strtemplate(args[0]);
+	baton->strtemplate = strdup(ToCString(strtemplate));
+	baton->cb = Persistent<Function>::New(cb);
+	baton->result = false;
+
+	eio_custom(Mkstemp, EIO_PRI_DEFAULT, AfterMkstemp, baton);
+	ev_ref(EV_DEFAULT_UC);
+	return scope.Close(Undefined());
+
+}
 
 static Handle<Value> FlockAsync(const Arguments& args) {
 
@@ -97,7 +133,7 @@ static Handle<Value> FlockAsync(const Arguments& args) {
 
 	eio_custom(Flock, EIO_PRI_DEFAULT, AfterFlock, baton);
 	ev_ref(EV_DEFAULT_UC);
-	return Undefined();
+	return scope.Close(Undefined());
 
 }
 
@@ -125,7 +161,26 @@ static Handle<Value> PAMAuthAsync(const Arguments& args) {
 
 	eio_custom(PAMAuth, EIO_PRI_DEFAULT, AfterPAMAuth, baton);
 	ev_ref(EV_DEFAULT_UC);
-	return Undefined();
+	return scope.Close(Undefined());
+
+}
+
+static int Mkstemp(eio_req *req) {
+
+	struct mkstemp_baton * baton = (struct mkstemp_baton *)req->data;
+	int fd = mkstemp(baton->strtemplate);
+
+	if (fd == -1)
+		baton->result = false;
+
+	else {
+
+		baton->fd = fd;
+		baton->result = true;
+
+	}
+
+	return 0;
 
 }
 
@@ -133,15 +188,10 @@ static int Flock(eio_req *req) {
 
 	struct flock_baton * baton = (struct flock_baton *)req->data;
 
-	if (flock(baton->fd, LOCK_EX | LOCK_NB) == -1) {
-
+	if (flock(baton->fd, LOCK_EX | LOCK_NB) == -1)
 		baton->result = false;
-
-	} else {
-
+	else
 		baton->result = true;
-
-	}
 
 	return 0;
 
@@ -158,6 +208,39 @@ static int PAMAuth(eio_req *req) {
 	if (retval == PAM_SUCCESS)
 		baton->result = true;
 
+	return 0;
+
+}
+
+static int AfterMkstemp(eio_req *req) {
+
+	HandleScope scope;
+	ev_unref(EV_DEFAULT_UC);
+	struct mkstemp_baton * baton = (struct mkstemp_baton *)req->data;
+	Handle<Value> argv[3];
+
+	if (baton->result) {
+
+		argv[0] = Null();
+		argv[1] = Integer::New(baton->fd);
+		argv[2] = String::New(baton->strtemplate);
+
+	} else {
+
+		argv[0] = True();
+		argv[1] = Null();
+		argv[2] = Null();
+
+	}
+
+	TryCatch try_catch;
+	baton->cb->Call(Context::GetCurrent()->Global(), 3, argv);
+
+	if (try_catch.HasCaught())
+		FatalException(try_catch);
+
+	baton->cb.Dispose();
+	delete baton;
 	return 0;
 
 }
@@ -186,7 +269,7 @@ static int AfterFlock(eio_req *req) {
 
 }
 
- static int AfterPAMAuth(eio_req *req) {
+static int AfterPAMAuth(eio_req *req) {
 
 	HandleScope scope;
 	ev_unref(EV_DEFAULT_UC);
@@ -210,14 +293,13 @@ static int AfterFlock(eio_req *req) {
 	delete baton;
 	return 0;
 
- }
-
-
+}
 
 extern "C" void init (Handle<Object> target) {
 
 	HandleScope scope;
 	NODE_SET_METHOD(target, "flock", FlockAsync);
 	NODE_SET_METHOD(target, "pamauth", PAMAuthAsync);
+	NODE_SET_METHOD(target, "mkstemp", MkstempAsync);
 
 }

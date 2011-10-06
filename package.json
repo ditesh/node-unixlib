@@ -1,17 +1,18 @@
 {
-	"name" : "unix",
-	"version" : "v0.1.0",
-	"description" : "Native Unix utilities for Node.js",
+	"name" : "unixlib",
+	"version" : "v0.1.1",
+	"description" : "Native Linux utilities for Node.js, currently PAM authentication, flock() and mkstemp",
 	"homepage" : "https://github.com/ditesh/node-unix",
+        "keywords": ["linux", "flock", "pam", "authentication", "unix"],
 	"author" : { 
 		"name" : "Ditesh Shashikant Gathani",
 		"email" : "ditesh@gathani.org",
 		"url" : "http://ditesh.gathani.org/blog/"
 	},
-	"repository" : { "type" : "git", "url" : "https://github.com/ditesh/node-unix.git" },
+	"repository" : { "type" : "git", "url" : "https://github.com/ditesh/node-unixlib.git" },
 	"scripts" : {
 		"preinstall" : "node-waf configure && node-waf build",
 		"preuninstall" : "rm -rf build/*"
 	},
-	"main" : "build/default/pam.node"
+	"main" : "build/default/unixlib.node"
 }
