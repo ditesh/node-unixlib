@@ -17,13 +17,13 @@ using namespace node;
 using namespace v8;
 
 static Handle<Value> MkstempAsync(const Arguments&);
-static int Mkstemp(eio_req *);
+static void Mkstemp(eio_req *);
 static int AfterMkstemp(eio_req *);
 static Handle<Value> FlockAsync(const Arguments&);
-static int Flock(eio_req *);
+static void Flock(eio_req *);
 static int AfterFlock(eio_req *);
 static Handle<Value> PAMAuthAsync(const Arguments&);
-static int PAMAuth(eio_req *);
+static void PAMAuth(eio_req *);
 static int AfterPAMAuth(eio_req *);
 extern "C" void init(Handle<Object>);
 
