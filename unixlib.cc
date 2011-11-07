@@ -165,7 +165,7 @@ static Handle<Value> PAMAuthAsync(const Arguments& args) {
 
 }
 
-static int Mkstemp(eio_req *req) {
+static void Mkstemp(eio_req *req) {
 
 	struct mkstemp_baton * baton = (struct mkstemp_baton *)req->data;
 	int fd = mkstemp(baton->strtemplate);
@@ -184,7 +184,7 @@ static int Mkstemp(eio_req *req) {
 
 }
 
-static int Flock(eio_req *req) {
+static void Flock(eio_req *req) {
 
 	struct flock_baton * baton = (struct flock_baton *)req->data;
 
@@ -197,7 +197,7 @@ static int Flock(eio_req *req) {
 
 }
 
-static int PAMAuth(eio_req *req) {
+static void PAMAuth(eio_req *req) {
 
 	struct pam_baton* baton = (struct pam_baton*) req->data;
 	char *service = strdup(baton->service);
