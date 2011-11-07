@@ -180,7 +180,7 @@ static void Mkstemp(eio_req *req) {
 
 	}
 
-	return 0;
+	//return 0;
 
 }
 
@@ -193,7 +193,7 @@ static void Flock(eio_req *req) {
 	else
 		baton->result = true;
 
-	return 0;
+	//return 0;
 
 }
 
@@ -208,7 +208,7 @@ static void PAMAuth(eio_req *req) {
 	if (retval == PAM_SUCCESS)
 		baton->result = true;
 
-	return 0;
+	//return 0;
 
 }
 
