@@ -17,13 +17,13 @@ using namespace node;
 using namespace v8;
 
 static Handle<Value> MkstempAsync(const Arguments&);
-static int Mkstemp(eio_req *);
+static void Mkstemp(eio_req *);
 static int AfterMkstemp(eio_req *);
 static Handle<Value> FlockAsync(const Arguments&);
-static int Flock(eio_req *);
+static void Flock(eio_req *);
 static int AfterFlock(eio_req *);
 static Handle<Value> PAMAuthAsync(const Arguments&);
-static int PAMAuth(eio_req *);
+static void PAMAuth(eio_req *);
 static int AfterPAMAuth(eio_req *);
 extern "C" void init(Handle<Object>);
 
@@ -165,7 +165,7 @@ static Handle<Value> PAMAuthAsync(const Arguments& args) {
 
 }
 
-static int Mkstemp(eio_req *req) {
+static void Mkstemp(eio_req *req) {
 
 	struct mkstemp_baton * baton = (struct mkstemp_baton *)req->data;
 	int fd = mkstemp(baton->strtemplate);
@@ -180,11 +180,11 @@ static int Mkstemp(eio_req *req) {
 
 	}
 
-	return 0;
+	//return 0;
 
 }
 
-static int Flock(eio_req *req) {
+static void Flock(eio_req *req) {
 
 	struct flock_baton * baton = (struct flock_baton *)req->data;
 
@@ -193,11 +193,11 @@ static int Flock(eio_req *req) {
 	else
 		baton->result = true;
 
-	return 0;
+	//return 0;
 
 }
 
-static int PAMAuth(eio_req *req) {
+static void PAMAuth(eio_req *req) {
 
 	struct pam_baton* baton = (struct pam_baton*) req->data;
 	char *service = strdup(baton->service);
@@ -208,7 +208,7 @@ static int PAMAuth(eio_req *req) {
 	if (retval == PAM_SUCCESS)
 		baton->result = true;
 
-	return 0;
+	//return 0;
 
 }
 
