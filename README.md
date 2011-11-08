@@ -4,6 +4,6 @@ This native Node.js addon provides native asynchronous standard Unix functions.
 
 Right now, we have PAM authentication, flock() and mkstemp(). Do contribute more!
 
-Tested on NodeJS 0.4.8, with on Linux (Fedora 15).
+Tested on NodeJS 0.6.0 on Linux (Fedora 15).
 
-See ```demo``` to see it in action.
+See the demonstration files in ```demo/``` to see it in action.
