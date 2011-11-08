@@ -1,4 +1,4 @@
-var unixlib = require("../build/default/unixlib");
+var unixlib = require("../build/Release/unixlib");
 var goodstrtemplate = "/tmp/mkstempXXXXXX";
 var badstrtemplate = "/tmp/mkstempXXX";
 

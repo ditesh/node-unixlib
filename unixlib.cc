@@ -21,7 +21,7 @@ static void Mkstemp(eio_req *);
 static int AfterMkstemp(eio_req *);
 static Handle<Value> FlockAsync(const Arguments&);
 static void Flock(eio_req *);
-static int AfterFlock(eio_req *);
+static int  AfterFlock(eio_req *);
 static Handle<Value> PAMAuthAsync(const Arguments&);
 static void PAMAuth(eio_req *);
 static int AfterPAMAuth(eio_req *);
@@ -29,40 +29,40 @@ extern "C" void init(Handle<Object>);
 
 extern "C" {
 
-	struct pam_response *reply;
-			
-	int null_conv(int num_msg, const struct pam_message **msg, struct pam_response **resp, void *appdata_ptr) {
+    struct pam_response *reply;
 
-		*resp = reply;
-		return PAM_SUCCESS;
-				
-	}                       
-				
-	static struct pam_conv conv = { null_conv, NULL };
-				
-	const char* ToCString(const v8::String::Utf8Value& value) {
-		return *value ? *value : "<string conversion failed>";
-	}               
+    int null_conv(int num_msg, const struct pam_message **msg, struct pam_response **resp, void *appdata_ptr) {
 
-        int _pam_authenticate(const char *service, const char *username, const char *password) {
+        *resp = reply;
+        return PAM_SUCCESS;
 
-                pam_handle_t *pamh = NULL;
-                int retval = pam_start(service, username, &conv, &pamh);
+    }                       
 
-                if (retval == PAM_SUCCESS) {
+    static struct pam_conv conv = { null_conv, NULL };
 
-                        reply = (struct pam_response *) malloc(sizeof(struct pam_response));
-                        reply[0].resp = (char *) password;
-                        reply[0].resp_retcode = 0;
+    const char* ToCString(const v8::String::Utf8Value& value) {
+        return *value ? *value : "<string conversion failed>";
+    }               
 
-                        retval = pam_authenticate(pamh, 0);
-                        pam_end(pamh, PAM_SUCCESS);
+    int _pam_authenticate(const char *service, const char *username, const char *password) {
 
-                }
+        pam_handle_t *pamh = NULL;
+        int retval = pam_start(service, username, &conv, &pamh);
 
-                return retval;
+        if (retval == PAM_SUCCESS) {
+
+            reply = (struct pam_response *) malloc(sizeof(struct pam_response));
+            reply[0].resp = (char *) password;
+            reply[0].resp_retcode = 0;
+
+            retval = pam_authenticate(pamh, 0);
+            pam_end(pamh, PAM_SUCCESS);
 
         }
+
+        return retval;
+
+    }
 }
 
 struct mkstemp_baton {
@@ -179,9 +179,6 @@ static void Mkstemp(eio_req *req) {
 		baton->result = true;
 
 	}
-
-	//return 0;
-
 }
 
 static void Flock(eio_req *req) {
@@ -192,8 +189,6 @@ static void Flock(eio_req *req) {
 		baton->result = false;
 	else
 		baton->result = true;
-
-	//return 0;
 
 }
 
@@ -207,8 +202,6 @@ static void PAMAuth(eio_req *req) {
 
 	if (retval == PAM_SUCCESS)
 		baton->result = true;
-
-	//return 0;
 
 }
 
@@ -241,7 +234,7 @@ static int AfterMkstemp(eio_req *req) {
 
 	baton->cb.Dispose();
 	delete baton;
-	return 0;
+    return 0;
 
 }
 
@@ -265,7 +258,7 @@ static int AfterFlock(eio_req *req) {
 
 	baton->cb.Dispose();
 	delete baton;
-	return 0;
+    return 0;
 
 }
 
@@ -291,7 +284,7 @@ static int AfterPAMAuth(eio_req *req) {
 
 	baton->cb.Dispose();
 	delete baton;
-	return 0;
+    return 0;
 
 }
 

@@ -1,5 +1,5 @@
 var fs = require("fs");
-var unixlib = require("../build/default/unixlib");
+var unixlib = require("../build/Release/unixlib");
 var filename = "/tmp/flock.example";
 
 // Let's try flocking
@@ -10,5 +10,5 @@ fs.open(filename, "r", undefined, function(err, fd) {
 		unixlib.flock(fd, function(result) {
 			console.log(result);
 		});
-	}
+	} else console.log(err);
 });
