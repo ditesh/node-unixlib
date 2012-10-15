@@ -1,5 +1,5 @@
 var fs = require("fs");
-var unixlib = require("../build/Release/unixlib");
+var unixlib = require("../build/Release/unixlib.node");
 var filename = "/tmp/flock.example";
 
 // Let's try flocking
