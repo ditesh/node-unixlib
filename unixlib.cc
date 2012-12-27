@@ -31,6 +31,7 @@ static Handle<Value> PAMAuthAsync(const Arguments&);
 static void PAMAuth(eio_req *);
 static int AfterPAMAuth(eio_req *);
 static Handle<Value> CryptAsync(const Arguments&);
+static Handle<Value> CryptSync(const Arguments&);
 static void Crypt(eio_req *);
 static int AfterCrypt(eio_req *);
 extern "C" void init(Handle<Object>);
@@ -180,6 +181,33 @@ static Handle<Value> PAMAuthAsync(const Arguments& args) {
 
 }
 
+static Handle<Value> CryptSync(const Arguments& args) {
+  HandleScope scope;
+  const char *usage = "usage: cryptSync(password [, salt ])";
+  char salt[NODE_MAX_SALT_LEN + 1];
+  bool salt_def = false;
+  bool valid_call = false;
+  
+  strncpy(salt, "$1$", NODE_MAX_SALT_LEN);
+  if (args.Length() == 1) {
+    valid_call = true;
+	}
+  if (args.Length() == 2) {
+    valid_call = true;
+    salt_def = true;
+  }
+  if (!valid_call)
+		return ThrowException(Exception::Error(String::New(usage)));
+
+String::Utf8Value password(args[0]);
+  if (salt_def) {
+    String::Utf8Value salt_arg(args[1]);
+    strncpy(salt, ToCString(salt_arg), NODE_MAX_SALT_LEN);
+  }
+  char *result = crypt(ToCString(password),salt);
+  return scope.Close(String::New(result));
+}
+
 static Handle<Value> CryptAsync(const Arguments& args) {
 
   HandleScope scope;
@@ -188,7 +216,7 @@ static Handle<Value> CryptAsync(const Arguments& args) {
   bool salt_def = false;
   bool valid_call = false;
   int cbid = 2;
-  salt[0] = salt[NODE_MAX_SALT_LEN] = '\0';
+  //salt[0] = salt[NODE_MAX_SALT_LEN] = '\0';
   strncpy(salt, "$1$", NODE_MAX_SALT_LEN);
 	if (args.Length() == 2) {
     valid_call = true;
@@ -210,10 +238,9 @@ static Handle<Value> CryptAsync(const Arguments& args) {
 	String::Utf8Value password(args[0]);
   if (salt_def) {
     String::Utf8Value salt_arg(args[1]);
-    baton->salt = strdup(ToCString(salt_arg));
+    strncpy(salt, ToCString(salt_arg), NODE_MAX_SALT_LEN);
   }
-  else 
-    baton->salt = strdup(salt);
+  baton->salt = strdup(salt);
   
 
 	baton->passwd = strdup(ToCString(password));
@@ -393,5 +420,6 @@ extern "C" void init (Handle<Object> target) {
 	NODE_SET_METHOD(target, "pamauth", PAMAuthAsync);
 	NODE_SET_METHOD(target, "mkstemp", MkstempAsync);
   NODE_SET_METHOD(target, "crypt", CryptAsync);
+  NODE_SET_METHOD(target, "cryptSync", CryptSync);
 
 }
