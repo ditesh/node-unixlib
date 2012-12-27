@@ -1,12 +1,17 @@
 var unixlib = require("../build/Release/unixlib.node");
 
-unixlib.crypt("testpasswd","12",function(){
+
+var res = unixlib.crypt("testpasswd");
+console.log("without salt : ",res);
+
+res = unixlib.crypt("testpasswd","12");
+console.log("with salt : ",res);
+
+// async call has unpredictable results here
+// TODO: fix bugs in cc impl
+unixlib.cryptAsync("testpasswd","12",function(){
     console.log("with salt : ", arguments);
   });
-
-var res = unixlib.cryptSync("testpasswd");
-console.log(res);
-
-unixlib.crypt("testpasswd",function(){
+unixlib.cryptAsync("testpasswd",function(){
     console.log("without salt : ",arguments);
   });

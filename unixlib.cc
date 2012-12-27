@@ -30,10 +30,10 @@ static int  AfterFlock(eio_req *);
 static Handle<Value> PAMAuthAsync(const Arguments&);
 static void PAMAuth(eio_req *);
 static int AfterPAMAuth(eio_req *);
-static Handle<Value> CryptAsync(const Arguments&);
-static Handle<Value> CryptSync(const Arguments&);
-static void Crypt(eio_req *);
-static int AfterCrypt(eio_req *);
+Handle<Value> CryptAsync(const Arguments&);
+Handle<Value> CryptSync(const Arguments&);
+void Crypt(eio_req *);
+int AfterCrypt(eio_req *);
 extern "C" void init(Handle<Object>);
 
 extern "C" {
@@ -181,10 +181,11 @@ static Handle<Value> PAMAuthAsync(const Arguments& args) {
 
 }
 
-static Handle<Value> CryptSync(const Arguments& args) {
+Handle<Value> CryptSync(const Arguments& args) {
   HandleScope scope;
   const char *usage = "usage: cryptSync(password [, salt ])";
   char salt[NODE_MAX_SALT_LEN + 1];
+  salt[0] = salt[NODE_MAX_SALT_LEN] = '\0';
   bool salt_def = false;
   bool valid_call = false;
   
@@ -205,18 +206,20 @@ String::Utf8Value password(args[0]);
     strncpy(salt, ToCString(salt_arg), NODE_MAX_SALT_LEN);
   }
   char *result = crypt(ToCString(password),salt);
+  
   return scope.Close(String::New(result));
 }
 
-static Handle<Value> CryptAsync(const Arguments& args) {
+Handle<Value> CryptAsync(const Arguments& args) {
 
   HandleScope scope;
 	const char *usage = "usage: crypt(password [, salt ], callback)";
   char salt[NODE_MAX_SALT_LEN + 1];
+  //Local<Value> salt_def = Local<Value>::New(Boolean::New(false));
   bool salt_def = false;
   bool valid_call = false;
   int cbid = 2;
-  //salt[0] = salt[NODE_MAX_SALT_LEN] = '\0';
+  salt[0] = salt[NODE_MAX_SALT_LEN] = '\0';
   strncpy(salt, "$1$", NODE_MAX_SALT_LEN);
 	if (args.Length() == 2) {
     valid_call = true;
@@ -241,7 +244,6 @@ static Handle<Value> CryptAsync(const Arguments& args) {
     strncpy(salt, ToCString(salt_arg), NODE_MAX_SALT_LEN);
   }
   baton->salt = strdup(salt);
-  
 
 	baton->passwd = strdup(ToCString(password));
   
@@ -292,13 +294,13 @@ static void PAMAuth(eio_req *req) {
 		baton->result = true;
 
 }
-static void Crypt(eio_req *req) {
+void Crypt(eio_req *req) {
   
   struct crypt_baton* baton = (struct crypt_baton*) req->data;
   //struct crypt_data buffer;
 	char *passwd = strdup(baton->passwd);
   char *salt = strdup(baton->salt);
-		baton->result = crypt(passwd, salt);
+	baton->result = crypt(passwd, salt);
 
 }
 
@@ -385,7 +387,7 @@ static int AfterPAMAuth(eio_req *req) {
 
 }
 
-static int AfterCrypt(eio_req *req) {
+int AfterCrypt(eio_req *req) {
 
   HandleScope scope;
 	ev_unref(EV_DEFAULT_UC);
@@ -419,7 +421,7 @@ extern "C" void init (Handle<Object> target) {
 	NODE_SET_METHOD(target, "flock", FlockAsync);
 	NODE_SET_METHOD(target, "pamauth", PAMAuthAsync);
 	NODE_SET_METHOD(target, "mkstemp", MkstempAsync);
-  NODE_SET_METHOD(target, "crypt", CryptAsync);
-  NODE_SET_METHOD(target, "cryptSync", CryptSync);
+  NODE_SET_METHOD(target, "cryptAsync", CryptAsync);
+  NODE_SET_METHOD(target, "crypt", CryptSync);
 
 }
