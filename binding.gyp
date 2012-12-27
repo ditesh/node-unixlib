@@ -2,10 +2,14 @@
   "targets": [
     {
       "target_name": "unixlib",
-      "include_dirs": [ "security/pam_appl.h" ],
+      "include_dirs": [ "security/pam_appl.h","crypt.h" ],
       "direct_dependent_settings": {
-        "linkflags": [ "-lpam" ]
+        "linkflags": [ "-lpam", "-lcrypt" ]
       },
+      'link_settings': {
+        'libraries': ["-lpam", "-lcrypt"],
+      },
+
       "conditions": [
 		[ "OS=='win'", {
 		
