@@ -185,10 +185,8 @@ static void Flock(eio_req *req) {
 
 	struct flock_baton * baton = (struct flock_baton *)req->data;
 
-	if (flock(baton->fd, LOCK_EX | LOCK_NB) == -1)
-		baton->result = false;
-	else
-		baton->result = true;
+	if (flock(baton->fd, LOCK_EX | LOCK_NB) == -1) baton->result = false;
+	else baton->result = true;
 
 }
 
@@ -253,8 +251,7 @@ static int AfterFlock(eio_req *req) {
 	TryCatch try_catch;
 	baton->cb->Call(Context::GetCurrent()->Global(), 1, argv);
 
-	if (try_catch.HasCaught())
-		FatalException(try_catch);
+	if (try_catch.HasCaught()) FatalException(try_catch);
 
 	baton->cb.Dispose();
 	delete baton;
