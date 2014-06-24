@@ -1,4 +1,4 @@
-var unixlib = require("../build/Release/unixlib");
+var unixlib = require("../build/Release/unixlib.node");
 
 // Change accordingly or write your own.
 var service = "system-auth";

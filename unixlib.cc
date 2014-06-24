@@ -4,7 +4,12 @@
 #include <stdlib.h>
 #include <sys/file.h>
 #include <stdio.h>
+#include <crypt.h>
 #include <security/pam_appl.h>
+
+#ifndef NODE_MAX_SALT_LEN
+#define NODE_MAX_SALT_LEN 2
+#endif
 
 #define REQ_FUN_ARG(I, VAR)                                             \
   if (args.Length() <= (I) || !args[I]->IsFunction())                   \
@@ -25,6 +30,10 @@ static int  AfterFlock(eio_req *);
 static Handle<Value> PAMAuthAsync(const Arguments&);
 static void PAMAuth(eio_req *);
 static int AfterPAMAuth(eio_req *);
+Handle<Value> CryptAsync(const Arguments&);
+Handle<Value> CryptSync(const Arguments&);
+void Crypt(eio_req *);
+int AfterCrypt(eio_req *);
 extern "C" void init(Handle<Object>);
 
 extern "C" {
@@ -85,6 +94,13 @@ struct pam_baton {
 	const char *password;
 	Persistent<Function> cb;
 };
+struct crypt_baton {
+  char *passwd;
+  char *salt;
+	char *result;
+	Persistent<Function> cb;
+};
+
 
 static Handle<Value> MkstempAsync(const Arguments& args) {
 
@@ -165,6 +181,80 @@ static Handle<Value> PAMAuthAsync(const Arguments& args) {
 
 }
 
+Handle<Value> CryptSync(const Arguments& args) {
+  HandleScope scope;
+  const char *usage = "usage: cryptSync(password [, salt ])";
+  char salt[NODE_MAX_SALT_LEN + 1];
+  salt[0] = salt[NODE_MAX_SALT_LEN] = '\0';
+  bool salt_def = false;
+  bool valid_call = false;
+  
+  strncpy(salt, "$1$", NODE_MAX_SALT_LEN);
+  if (args.Length() == 1) {
+    valid_call = true;
+	}
+  if (args.Length() == 2) {
+    valid_call = true;
+    salt_def = true;
+  }
+  if (!valid_call)
+		return ThrowException(Exception::Error(String::New(usage)));
+
+String::Utf8Value password(args[0]);
+  if (salt_def) {
+    String::Utf8Value salt_arg(args[1]);
+    strncpy(salt, ToCString(salt_arg), NODE_MAX_SALT_LEN);
+  }
+  char *result = crypt(ToCString(password),salt);
+  
+  return scope.Close(String::New(result));
+}
+
+Handle<Value> CryptAsync(const Arguments& args) {
+
+  HandleScope scope;
+	const char *usage = "usage: crypt(password [, salt ], callback)";
+  char salt[NODE_MAX_SALT_LEN + 1];
+  //Local<Value> salt_def = Local<Value>::New(Boolean::New(false));
+  bool salt_def = false;
+  bool valid_call = false;
+  int cbid = 2;
+  salt[0] = salt[NODE_MAX_SALT_LEN] = '\0';
+  strncpy(salt, "$1$", NODE_MAX_SALT_LEN);
+	if (args.Length() == 2) {
+    valid_call = true;
+    cbid = 1;
+	}
+  if (args.Length() == 3) {
+    valid_call = true;
+    salt_def = true;
+    cbid = 2;
+  }
+  if (!valid_call)
+		return ThrowException(Exception::Error(String::New(usage)));
+
+	REQ_FUN_ARG(cbid, cb);
+
+	crypt_baton *baton = new crypt_baton();
+	baton->result = false;
+
+	String::Utf8Value password(args[0]);
+  if (salt_def) {
+    String::Utf8Value salt_arg(args[1]);
+    strncpy(salt, ToCString(salt_arg), NODE_MAX_SALT_LEN);
+  }
+  baton->salt = strdup(salt);
+
+	baton->passwd = strdup(ToCString(password));
+  
+	baton->cb = Persistent<Function>::New(cb);
+
+	eio_custom(Crypt, EIO_PRI_DEFAULT, AfterCrypt, baton);
+	ev_ref(EV_DEFAULT_UC);
+	return scope.Close(Undefined());
+
+}
+
 static void Mkstemp(eio_req *req) {
 
 	struct mkstemp_baton * baton = (struct mkstemp_baton *)req->data;
@@ -200,6 +290,15 @@ static void PAMAuth(eio_req *req) {
 
 	if (retval == PAM_SUCCESS)
 		baton->result = true;
+
+}
+void Crypt(eio_req *req) {
+  
+  struct crypt_baton* baton = (struct crypt_baton*) req->data;
+  //struct crypt_data buffer;
+	char *passwd = strdup(baton->passwd);
+  char *salt = strdup(baton->salt);
+	baton->result = crypt(passwd, salt);
 
 }
 
@@ -285,11 +384,41 @@ static int AfterPAMAuth(eio_req *req) {
 
 }
 
+int AfterCrypt(eio_req *req) {
+
+  HandleScope scope;
+	ev_unref(EV_DEFAULT_UC);
+	crypt_baton *baton = static_cast<crypt_baton *>(req->data);
+
+	Local<Value> argv[1];
+
+	if (baton->result) {
+		argv[0] = Local<Boolean>::New(True());
+    argv[1] = String::New(baton->result);
+	}
+	else
+		argv[0] = Local<Boolean>::New(False());
+
+	TryCatch try_catch;
+
+	baton->cb->Call(Context::GetCurrent()->Global(), 2, argv);
+
+	if (try_catch.HasCaught())
+		FatalException(try_catch);
+
+	baton->cb.Dispose();
+	delete baton;
+    return 0;
+
+}
+
 extern "C" void init (Handle<Object> target) {
 
 	HandleScope scope;
 	NODE_SET_METHOD(target, "flock", FlockAsync);
 	NODE_SET_METHOD(target, "pamauth", PAMAuthAsync);
 	NODE_SET_METHOD(target, "mkstemp", MkstempAsync);
+  NODE_SET_METHOD(target, "cryptAsync", CryptAsync);
+  NODE_SET_METHOD(target, "crypt", CryptSync);
 
 }
